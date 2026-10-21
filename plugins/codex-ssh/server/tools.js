@@ -149,6 +149,14 @@ export function registerSshTools(server, configStore, sshManager) {
           .min(1)
           .optional()
           .describe("Environment variable holding the private key passphrase."),
+        password: z
+          .string()
+          .min(1)
+          .max(16_384)
+          .optional()
+          .describe(
+            "Plaintext SSH password supplied by the user. It is stored in the local plugin config and is never returned in tool results."
+          ),
         passwordEnv: z
           .string()
           .min(1)
@@ -192,6 +200,42 @@ export function registerSshTools(server, configStore, sshManager) {
         ok: true,
         host: publicHost(configStore, profile.alias),
         configPath: configStore.getConfigPath(),
+      };
+    })
+  );
+
+  server.registerTool(
+    "ssh_set_host_password",
+    {
+      title: "Set an SSH host password",
+      description:
+        "Set or replace the inline password for an existing SSH host. The password is written only to the local plugin config; the sanitized host result never contains it. Use this when the user explicitly provides a plaintext password for authentication.",
+      inputSchema: {
+        alias: z
+          .string()
+          .min(1)
+          .describe("Configured host alias whose password should be set."),
+        password: z
+          .string()
+          .min(1)
+          .max(16_384)
+          .describe(
+            "Plaintext SSH password. It becomes part of the visible tool call but is not returned in results."
+          ),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        openWorldHint: false,
+      },
+    },
+    guarded(async ({ alias, password }) => {
+      configStore.setPassword(alias, password);
+      return {
+        ok: true,
+        host: publicHost(configStore, alias),
+        configPath: configStore.getConfigPath(),
+        credentialStored: true,
       };
     })
   );

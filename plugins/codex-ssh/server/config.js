@@ -317,7 +317,7 @@ function buildAuthFromProfile(profile) {
     profile.authType ??
     (profile.privateKeyPath
       ? "privateKey"
-      : profile.passwordEnv
+      : profile.password || profile.passwordEnv
         ? "password"
         : "agent");
 
@@ -331,6 +331,7 @@ function buildAuthFromProfile(profile) {
   } else if (authType === "password") {
     auth = {
       type: "password",
+      password: profile.password,
       passwordEnv: profile.passwordEnv,
     };
   } else {
@@ -632,6 +633,7 @@ export class ConfigStore {
         "authType",
         "privateKeyPath",
         "passphraseEnv",
+        "password",
         "passwordEnv",
         "agentSocket",
       ].some((key) => profile[key] !== undefined)
@@ -676,6 +678,28 @@ export class ConfigStore {
       throw new Error(`SSH host alias "${alias}" does not exist.`);
     }
     raw.hosts[alias].displayName = normalizedName;
+    this.writeRawConfig(raw);
+    this.reload(true);
+    return this.getHost(alias);
+  }
+
+  setPassword(alias, password) {
+    validateAlias(alias);
+    if (typeof password !== "string" || !password.trim()) {
+      throw new Error("Password must be a non-empty string.");
+    }
+    this.reload(true);
+    const raw = this.readRawConfig();
+    raw.hosts ??= {};
+    raw.imports ??= {};
+
+    if (!raw.hosts[alias]) {
+      throw new Error(`SSH host alias "${alias}" does not exist.`);
+    }
+    raw.hosts[alias].auth = {
+      type: "password",
+      password,
+    };
     this.writeRawConfig(raw);
     this.reload(true);
     return this.getHost(alias);

@@ -45,6 +45,7 @@ test("starts the MCP server and exposes the SSH tool catalog", async (context) =
       "ssh_read_file",
       "ssh_remove_host",
       "ssh_set_display_name",
+      "ssh_set_host_password",
       "ssh_test_connection",
       "ssh_uninstall_plugin",
       "ssh_upload_file",
@@ -66,12 +67,23 @@ test("starts the MCP server and exposes the SSH tool catalog", async (context) =
         useSshConfig: false,
         host: "127.0.0.9",
         username: "tester",
-        authType: "agent",
+        authType: "password",
+        password: "first-inline-password",
         displayName: "本地测试服务器",
       },
     });
     assert.equal(addResult.isError, undefined);
     assert.equal(addResult.structuredContent.host.alias, "local-test");
+    assert.equal(
+      addResult.structuredContent.host.credentialSource,
+      "inlinePassword"
+    );
+    assert.equal(
+      JSON.stringify(addResult.structuredContent).includes(
+        "first-inline-password"
+      ),
+      false
+    );
     assert.equal(
       addResult.structuredContent.host.displayName,
       "本地测试服务器"
@@ -88,6 +100,32 @@ test("starts the MCP server and exposes the SSH tool catalog", async (context) =
     assert.equal(
       renameResult.structuredContent.host.displayName,
       "本地测试环境"
+    );
+
+    const passwordResult = await client.callTool({
+      name: "ssh_set_host_password",
+      arguments: {
+        alias: "local-test",
+        password: "replacement-inline-password",
+      },
+    });
+    assert.equal(passwordResult.isError, undefined);
+    assert.equal(passwordResult.structuredContent.credentialStored, true);
+    assert.equal(
+      JSON.stringify(passwordResult.structuredContent).includes(
+        "replacement-inline-password"
+      ),
+      false
+    );
+    const hostsAfterPassword = await client.callTool({
+      name: "ssh_list_hosts",
+      arguments: {},
+    });
+    assert.equal(
+      JSON.stringify(hostsAfterPassword.structuredContent).includes(
+        "replacement-inline-password"
+      ),
+      false
     );
 
     const uninstallGuardResult = await client.callTool({

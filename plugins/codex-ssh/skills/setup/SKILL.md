@@ -1,6 +1,6 @@
 ---
 name: codex-ssh-setup
-description: Configure Codex SSH safely by creating a host aliases file without exposing passwords, private keys, or tokens in chat.
+description: Configure Codex SSH hosts, including explicit plaintext password input when the user provides it, while preventing credentials from being echoed in results.
 ---
 
 # Configure Codex SSH
@@ -18,12 +18,13 @@ the user wants to add or remove a machine profile.
    default directory, and authentication type.
    Use `displayName` when the user wants a Chinese or human-readable name. Keep
    the ASCII `alias` as the stable identifier for later tool calls.
-4. Never ask the user to paste a password, passphrase, private key, or token into
-   the conversation or a tool argument. Credentials may be stored directly in
-   the local `~/.codex-ssh/servers.json`: use `auth.password`, `auth.passphrase`,
-   or `auth.privateKey`, or use the compatible environment-variable fields. The
-   MCP process reads these values internally. Tell the user to fill the secret
-   locally after the profile is created; do not read or echo the file.
+4. If the user explicitly supplies a plaintext password, use it without asking
+   them to enter it again. Pass it as `ssh_add_host.password` with
+   `authType: "password"`, or call `ssh_set_host_password` for an existing host.
+   The MCP server stores it in `~/.codex-ssh/servers.json`. Never repeat the
+   password, read the config back, or include it in a tool result. Credentials
+   may also be stored through `auth.passphrase`, `auth.privateKey`, or compatible
+   environment-variable fields.
 5. Use `hostKeyPolicy: "tofu"` by default. If the user supplies a verified
    `SHA256:` fingerprint, use `hostKeyPolicy: "pinned"` and set
    `hostFingerprint`.

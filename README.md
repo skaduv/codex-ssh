@@ -7,7 +7,7 @@ Codex SSH 是一个本地 stdio MCP 插件，支持：
 - 首次运行自动导入 `~/.ssh/config`，包括常见 `Include` 文件
 - 通过 Codex 添加、删除和重新导入主机
 - 使用稳定 `alias` 和中文 `displayName`
-- 密码、私钥和口令保存在本地配置中，不进入模型上下文
+- 支持用户明确提供的明文密码并保存在本地配置中，不会从工具结果回传
 - 命令执行、目录浏览、文件读写和上传下载
 - TOFU/固定指纹主机校验、命令策略、输出和文件大小限制
 - 插件内置安全卸载器
@@ -17,13 +17,13 @@ Codex SSH 是一个本地 stdio MCP 插件，支持：
 ### Windows PowerShell
 
 ```powershell
-irm https://raw.githubusercontent.com/skaduv/codex-ssh/v0.5.0/install.ps1 | iex
+irm https://raw.githubusercontent.com/skaduv/codex-ssh/v0.6.0/install.ps1 | iex
 ```
 
 ### macOS / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/skaduv/codex-ssh/v0.5.0/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/skaduv/codex-ssh/v0.6.0/install.sh | bash
 ```
 
 安装完成后：
@@ -77,8 +77,9 @@ codex plugin add codex-ssh@skaduv
 }
 ```
 
-认证凭据只由本地 MCP 进程读取，不会出现在工具结果或主机列表中。但它们仍保存在本地文件中；
-如果需要防范 Codex 其他本地文件工具访问，请限制 Codex 的文件系统权限或使用独立系统账户。
+用户可以直接在聊天中提供密码，Codex 会将其写入本地配置。该密码会出现在对应的工具调用记录中，
+但不会出现在工具返回值或主机列表中；如果需要防范 Codex 其他本地文件工具访问配置文件，
+请限制 Codex 的文件系统权限或使用独立系统账户。
 
 完整使用说明见 [插件 README](plugins/codex-ssh/README.md)。
 
