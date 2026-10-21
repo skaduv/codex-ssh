@@ -17,13 +17,13 @@ Codex SSH 是一个本地 stdio MCP 插件，支持：
 ### Windows PowerShell
 
 ```powershell
-irm https://raw.githubusercontent.com/skaduv/codex-ssh/v0.6.0/install.ps1 | iex
+irm https://raw.githubusercontent.com/skaduv/codex-ssh/v0.6.1/install.ps1 | iex
 ```
 
 ### macOS / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/skaduv/codex-ssh/v0.6.0/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/skaduv/codex-ssh/v0.6.1/install.sh | bash
 ```
 
 安装完成后：

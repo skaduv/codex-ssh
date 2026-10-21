@@ -119,15 +119,26 @@ function encodePowerShell(script) {
   return Buffer.from(script, "utf16le").toString("base64");
 }
 
-function stopWindowsPluginProcesses(cacheRoot, logPath) {
+export function stopWindowsPluginProcesses(cacheRoot, logPath) {
   if (process.platform !== "win32") {
     return;
   }
 
   const escapedRoot = cacheRoot.replaceAll("'", "''");
+  const alternateRoot = cacheRoot.replaceAll("\\", "/").replaceAll("'", "''");
   const script = [
     "$ErrorActionPreference = 'SilentlyContinue'",
     `$root = '${escapedRoot}'`,
+    `$alternateRoot = '${alternateRoot}'`,
+    "Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | ForEach-Object {",
+    "  $commandLine = $_.CommandLine",
+    "  if ($commandLine -and (",
+    "    $commandLine.IndexOf($root, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 -or",
+    "    $commandLine.IndexOf($alternateRoot, [System.StringComparison]::OrdinalIgnoreCase) -ge 0",
+    "  )) {",
+    "    Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue",
+    "  }",
+    "}",
     "Get-Process -Name node -ErrorAction SilentlyContinue | ForEach-Object {",
     "  $candidate = $_",
     "  try {",

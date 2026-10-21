@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -7,6 +9,7 @@ import {
   inferPluginIdFromRoot,
   resolveCacheFamilyRoot,
   resolveInstalledCacheRoot,
+  stopWindowsPluginProcesses,
   validatePluginId,
 } from "../scripts/uninstall-lib.mjs";
 
@@ -79,3 +82,41 @@ test("rejects unsafe plugin identifiers", () => {
     /Invalid Codex plugin identifier/
   );
 });
+
+test(
+  "stops a self-contained bundle process by its cache-path command line",
+  { skip: process.platform !== "win32", timeout: 15_000 },
+  async () => {
+    const temporaryDirectory = fs.mkdtempSync(
+      path.join(os.tmpdir(), "codex-ssh-process-test-")
+    );
+    const cacheRoot = path.join(
+      temporaryDirectory,
+      "codex-ssh",
+      "codex-ssh",
+      "0.6.1"
+    );
+    fs.mkdirSync(cacheRoot, { recursive: true });
+    const logPath = path.join(temporaryDirectory, "uninstall.log");
+    const child = spawn(
+      process.execPath,
+      ["-e", "setInterval(() => {}, 1000)", cacheRoot],
+      {
+        stdio: "ignore",
+        windowsHide: true,
+      }
+    );
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      stopWindowsPluginProcesses(cacheRoot, logPath);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      assert.throws(() => process.kill(child.pid, 0));
+    } finally {
+      if (child.exitCode === null) {
+        child.kill("SIGKILL");
+      }
+      fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    }
+  }
+);
