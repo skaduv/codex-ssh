@@ -1,6 +1,6 @@
 {
   "name": "codex-ssh-plugin",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
   "type": "module",
   "description": "Local Codex plugin that exposes SSH operations through MCP.",

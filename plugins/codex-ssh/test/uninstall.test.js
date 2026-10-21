@@ -4,14 +4,19 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   removePluginActivationFromToml,
   inferPluginIdFromRoot,
   resolveCacheFamilyRoot,
   resolveInstalledCacheRoot,
+  scheduleUninstall,
   stopWindowsPluginProcesses,
   validatePluginId,
 } from "../scripts/uninstall-lib.mjs";
+
+const testDirectory = path.dirname(fileURLToPath(import.meta.url));
+const pluginDirectory = path.resolve(testDirectory, "..");
 
 test("removes only Codex SSH activation tables from project config", () => {
   const source = [
@@ -83,6 +88,24 @@ test("rejects unsafe plugin identifiers", () => {
   );
 });
 
+test("stages both uninstall CLI and library files", () => {
+  const result = scheduleUninstall({
+    pluginRoot: pluginDirectory,
+    pluginId: "codex-ssh@test",
+    spawnHelper: false,
+  });
+
+  try {
+    assert.equal(fs.existsSync(result.helperPath), true);
+    assert.equal(fs.existsSync(result.helperLibraryPath), true);
+  } finally {
+    fs.rmSync(path.dirname(result.helperPath), {
+      recursive: true,
+      force: true,
+    });
+  }
+});
+
 test(
   "stops a self-contained bundle process by its cache-path command line",
   { skip: process.platform !== "win32", timeout: 15_000 },
@@ -100,7 +123,11 @@ test(
     const logPath = path.join(temporaryDirectory, "uninstall.log");
     const child = spawn(
       process.execPath,
-      ["-e", "setInterval(() => {}, 1000)", cacheRoot],
+      [
+        "-e",
+        "setInterval(() => {}, 1000)",
+        path.join(cacheRoot, "server", "dist", "index.cjs"),
+      ],
       {
         stdio: "ignore",
         windowsHide: true,

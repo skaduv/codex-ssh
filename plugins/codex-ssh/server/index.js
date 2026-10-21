@@ -25,7 +25,7 @@ async function main() {
   const server = new McpServer(
     {
       name: "codex-ssh",
-      version: "0.6.1",
+      version: "0.6.2",
     },
     { instructions }
   );

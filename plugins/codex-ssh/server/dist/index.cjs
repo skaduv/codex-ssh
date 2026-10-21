@@ -58495,7 +58495,8 @@ function scheduleUninstall({
   deleteHostConfig = false,
   waitPid = process.pid,
   initialDelayMs = 1500,
-  logPath = defaultLogPath
+  logPath = defaultLogPath,
+  spawnHelper = true
 } = {}) {
   const resolvedPluginRoot = import_node_fs5.default.realpathSync(import_node_path6.default.resolve(pluginRoot));
   const effectivePluginId = pluginId ?? inferPluginIdFromRoot(resolvedPluginRoot) ?? DEFAULT_PLUGIN_ID;
@@ -58506,12 +58507,22 @@ function scheduleUninstall({
     import_node_path6.default.join(import_node_os4.default.tmpdir(), "codex-ssh-uninstall-")
   );
   const helperPath = import_node_path6.default.join(temporaryDirectory, "uninstall.mjs");
+  const helperLibraryPath = import_node_path6.default.join(
+    temporaryDirectory,
+    "uninstall-lib.mjs"
+  );
   const helperSourcePath = import_node_path6.default.join(
     resolvedPluginRoot,
     "scripts",
     "uninstall.mjs"
   );
+  const helperLibrarySource = import_node_path6.default.join(
+    resolvedPluginRoot,
+    "scripts",
+    "uninstall-lib.mjs"
+  );
   import_node_fs5.default.copyFileSync(helperSourcePath, helperPath);
+  import_node_fs5.default.copyFileSync(helperLibrarySource, helperLibraryPath);
   const args = [
     helperPath,
     "--helper",
@@ -58532,19 +58543,23 @@ function scheduleUninstall({
   if (deleteHostConfig) {
     args.push("--delete-host-config");
   }
-  const helper = (0, import_node_child_process2.spawn)(process.execPath, args, {
-    detached: true,
-    stdio: "ignore",
-    windowsHide: true,
-    env: process.env
-  });
-  helper.unref();
+  if (spawnHelper) {
+    const helper = (0, import_node_child_process2.spawn)(process.execPath, args, {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+      env: process.env
+    });
+    helper.unref();
+  }
   return {
     status: "scheduled",
     pluginId: effectivePluginId,
     cacheRoot,
     helperPath,
+    helperLibraryPath,
     logPath,
+    helperStarted: spawnHelper,
     message: "The detached uninstaller will stop Codex SSH MCP processes, remove the installed plugin cache, and keep host config by default."
   };
 }
@@ -58983,7 +58998,7 @@ async function main() {
   const server = new McpServer(
     {
       name: "codex-ssh",
-      version: "0.6.1"
+      version: "0.6.2"
     },
     { instructions }
   );

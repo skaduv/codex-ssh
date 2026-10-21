@@ -119,23 +119,32 @@ function encodePowerShell(script) {
   return Buffer.from(script, "utf16le").toString("base64");
 }
 
-export function stopWindowsPluginProcesses(cacheRoot, logPath) {
+export function stopWindowsPluginProcesses(
+  cacheRoot,
+  logPath,
+  { excludeProcessIds = [] } = {}
+) {
   if (process.platform !== "win32") {
     return;
   }
 
   const escapedRoot = cacheRoot.replaceAll("'", "''");
   const alternateRoot = cacheRoot.replaceAll("\\", "/").replaceAll("'", "''");
+  const excludedIds = excludeProcessIds
+    .filter((processId) => Number.isInteger(processId) && processId > 0)
+    .join(",");
   const script = [
     "$ErrorActionPreference = 'SilentlyContinue'",
     `$root = '${escapedRoot}'`,
     `$alternateRoot = '${alternateRoot}'`,
+    `$excludedIds = @(${excludedIds})`,
     "Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" | ForEach-Object {",
+    "  if ($excludedIds -contains $_.ProcessId) { return }",
     "  $commandLine = $_.CommandLine",
     "  if ($commandLine -and (",
     "    $commandLine.IndexOf($root, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 -or",
     "    $commandLine.IndexOf($alternateRoot, [System.StringComparison]::OrdinalIgnoreCase) -ge 0",
-    "  )) {",
+    "  ) -and $commandLine -match '[\\\\/]server[\\\\/]') {",
     "    Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue",
     "  }",
     "}",
@@ -293,7 +302,9 @@ export async function runUninstallHelper(options) {
 
   let removed = false;
   for (let attempt = 1; attempt <= 3 && !removed; attempt += 1) {
-    stopWindowsPluginProcesses(cacheRoot, logPath);
+    stopWindowsPluginProcesses(cacheRoot, logPath, {
+      excludeProcessIds: [process.pid],
+    });
     await sleep(700);
     removed = removeViaCodex(pluginId, logPath);
     if (!removed) {
@@ -322,6 +333,7 @@ export function scheduleUninstall({
   waitPid = process.pid,
   initialDelayMs = 1_500,
   logPath = defaultLogPath,
+  spawnHelper = true,
 } = {}) {
   const resolvedPluginRoot = fs.realpathSync(path.resolve(pluginRoot));
   const effectivePluginId =
@@ -337,12 +349,22 @@ export function scheduleUninstall({
     path.join(os.tmpdir(), "codex-ssh-uninstall-")
   );
   const helperPath = path.join(temporaryDirectory, "uninstall.mjs");
+  const helperLibraryPath = path.join(
+    temporaryDirectory,
+    "uninstall-lib.mjs"
+  );
   const helperSourcePath = path.join(
     resolvedPluginRoot,
     "scripts",
     "uninstall.mjs"
   );
+  const helperLibrarySource = path.join(
+    resolvedPluginRoot,
+    "scripts",
+    "uninstall-lib.mjs"
+  );
   fs.copyFileSync(helperSourcePath, helperPath);
+  fs.copyFileSync(helperLibrarySource, helperLibraryPath);
 
   const args = [
     helperPath,
@@ -365,20 +387,24 @@ export function scheduleUninstall({
     args.push("--delete-host-config");
   }
 
-  const helper = spawn(process.execPath, args, {
-    detached: true,
-    stdio: "ignore",
-    windowsHide: true,
-    env: process.env,
-  });
-  helper.unref();
+  if (spawnHelper) {
+    const helper = spawn(process.execPath, args, {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+      env: process.env,
+    });
+    helper.unref();
+  }
 
   return {
     status: "scheduled",
     pluginId: effectivePluginId,
     cacheRoot,
     helperPath,
+    helperLibraryPath,
     logPath,
+    helperStarted: spawnHelper,
     message:
       "The detached uninstaller will stop Codex SSH MCP processes, remove the installed plugin cache, and keep host config by default.",
   };
