@@ -1,11 +1,26 @@
 param(
   [string]$MarketplaceSource = "skaduv/codex-ssh",
   [string]$Ref = "main",
-  [string]$Marketplace = "codex-ssh",
-  [string]$PluginId = "codex-ssh@codex-ssh"
+  [string]$Marketplace = "skaduv",
+  [string]$PluginId = "codex-ssh@skaduv",
+  [string]$HttpsProxy = $env:HTTPS_PROXY
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $HttpsProxy) {
+  $internetSettings = Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings" -ErrorAction SilentlyContinue
+  if ($internetSettings.ProxyEnable -eq 1 -and $internetSettings.ProxyServer) {
+    $HttpsProxy = ($internetSettings.ProxyServer -split ";")[0]
+  }
+}
+if ($HttpsProxy -and -not $HttpsProxy.StartsWith("http")) {
+  $HttpsProxy = "http://$HttpsProxy"
+}
+if ($HttpsProxy) {
+  $env:HTTPS_PROXY = $HttpsProxy
+  $env:HTTP_PROXY = $HttpsProxy
+}
 
 if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {
   throw "未找到 codex 命令。请先安装并登录支持插件的 Codex。"

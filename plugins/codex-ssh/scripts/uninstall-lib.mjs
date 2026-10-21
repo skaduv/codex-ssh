@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const DEFAULT_PLUGIN_ID = "codex-ssh@codex-ssh";
+const DEFAULT_PLUGIN_ID = "codex-ssh@skaduv";
 const PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*@[a-z0-9][a-z0-9._-]*$/iu;
 const defaultLogPath = path.join(os.tmpdir(), "codex-ssh-uninstall.log");
 
@@ -44,6 +44,34 @@ export function resolveInstalledCacheRoot(pluginId) {
     marketplaceName,
     pluginName
   );
+}
+
+export function inferPluginIdFromRoot(pluginRoot) {
+  const normalizedRoot = path.resolve(pluginRoot);
+  const versionName = path.basename(normalizedRoot);
+  if (!/^\d+\.\d+\.\d+(?:[-+].*)?$/u.test(versionName)) {
+    return undefined;
+  }
+
+  const pluginFamily = path.dirname(normalizedRoot);
+  const marketplaceDirectory = path.dirname(pluginFamily);
+  if (
+    path.basename(path.dirname(marketplaceDirectory)).toLowerCase() !== "cache"
+  ) {
+    return undefined;
+  }
+
+  const pluginName = path.basename(pluginFamily);
+  const marketplaceName = path.basename(marketplaceDirectory);
+  if (
+    !pluginName ||
+    !marketplaceName ||
+    pluginName === "cache" ||
+    marketplaceName === "plugins"
+  ) {
+    return undefined;
+  }
+  return `${pluginName}@${marketplaceName}`;
 }
 
 export function removePluginActivationFromToml(source, pluginId) {
@@ -277,16 +305,20 @@ export async function runUninstallHelper(options) {
 
 export function scheduleUninstall({
   pluginRoot = process.env.PLUGIN_ROOT || process.cwd(),
-  pluginId = DEFAULT_PLUGIN_ID,
+  pluginId,
   projectRoot,
   deleteHostConfig = false,
   waitPid = process.pid,
   initialDelayMs = 1_500,
   logPath = defaultLogPath,
 } = {}) {
-  validatePluginId(pluginId);
   const resolvedPluginRoot = fs.realpathSync(path.resolve(pluginRoot));
-  const installedCacheRoot = resolveInstalledCacheRoot(pluginId);
+  const effectivePluginId =
+    pluginId ??
+    inferPluginIdFromRoot(resolvedPluginRoot) ??
+    DEFAULT_PLUGIN_ID;
+  validatePluginId(effectivePluginId);
+  const installedCacheRoot = resolveInstalledCacheRoot(effectivePluginId);
   const cacheRoot = fs.existsSync(installedCacheRoot)
     ? installedCacheRoot
     : resolveCacheFamilyRoot(resolvedPluginRoot);
@@ -307,7 +339,7 @@ export function scheduleUninstall({
     "--cache-root",
     cacheRoot,
     "--plugin-id",
-    pluginId,
+    effectivePluginId,
     "--wait-pid",
     String(waitPid),
     "--delay-ms",
@@ -332,7 +364,7 @@ export function scheduleUninstall({
 
   return {
     status: "scheduled",
-    pluginId,
+    pluginId: effectivePluginId,
     cacheRoot,
     helperPath,
     logPath,

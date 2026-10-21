@@ -38,7 +38,7 @@ curl -fsSL https://raw.githubusercontent.com/skaduv/codex-ssh/main/install.sh | 
 
 ```bash
 codex plugin marketplace add skaduv/codex-ssh --ref main
-codex plugin add codex-ssh@codex-ssh
+codex plugin add codex-ssh@skaduv
 ```
 
 刷新插件市场或重启 Codex 后，从 Plugins 中启用 **Codex SSH**。

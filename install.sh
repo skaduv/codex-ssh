@@ -3,8 +3,8 @@ set -euo pipefail
 
 MARKETPLACE_SOURCE="${MARKETPLACE_SOURCE:-skaduv/codex-ssh}"
 MARKETPLACE_REF="${MARKETPLACE_REF:-main}"
-MARKETPLACE_NAME="${MARKETPLACE_NAME:-codex-ssh}"
-PLUGIN_ID="${PLUGIN_ID:-codex-ssh@codex-ssh}"
+MARKETPLACE_NAME="${MARKETPLACE_NAME:-skaduv}"
+PLUGIN_ID="${PLUGIN_ID:-codex-ssh@skaduv}"
 
 if ! command -v codex >/dev/null 2>&1; then
   echo "未找到 codex 命令。请先安装并登录支持插件的 Codex。" >&2

@@ -5,7 +5,7 @@ installed with:
 
 ```bash
 codex plugin marketplace add skaduv/codex-ssh --ref main
-codex plugin add codex-ssh@codex-ssh
+codex plugin add codex-ssh@skaduv
 ```
 
 ## Official OpenAI Plugin Directory

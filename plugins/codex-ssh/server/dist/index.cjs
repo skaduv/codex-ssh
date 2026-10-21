@@ -58418,7 +58418,7 @@ var import_node_child_process2 = require("node:child_process");
 var import_node_fs5 = __toESM(require("node:fs"), 1);
 var import_node_os4 = __toESM(require("node:os"), 1);
 var import_node_path6 = __toESM(require("node:path"), 1);
-var DEFAULT_PLUGIN_ID = "codex-ssh@codex-ssh";
+var DEFAULT_PLUGIN_ID = "codex-ssh@skaduv";
 var PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*@[a-z0-9][a-z0-9._-]*$/iu;
 var defaultLogPath = import_node_path6.default.join(import_node_os4.default.tmpdir(), "codex-ssh-uninstall.log");
 function validatePluginId(pluginId) {
@@ -58448,18 +58448,37 @@ function resolveInstalledCacheRoot(pluginId) {
     pluginName
   );
 }
+function inferPluginIdFromRoot(pluginRoot) {
+  const normalizedRoot = import_node_path6.default.resolve(pluginRoot);
+  const versionName = import_node_path6.default.basename(normalizedRoot);
+  if (!/^\d+\.\d+\.\d+(?:[-+].*)?$/u.test(versionName)) {
+    return void 0;
+  }
+  const pluginFamily = import_node_path6.default.dirname(normalizedRoot);
+  const marketplaceDirectory = import_node_path6.default.dirname(pluginFamily);
+  if (import_node_path6.default.basename(import_node_path6.default.dirname(marketplaceDirectory)).toLowerCase() !== "cache") {
+    return void 0;
+  }
+  const pluginName = import_node_path6.default.basename(pluginFamily);
+  const marketplaceName = import_node_path6.default.basename(marketplaceDirectory);
+  if (!pluginName || !marketplaceName || pluginName === "cache" || marketplaceName === "plugins") {
+    return void 0;
+  }
+  return `${pluginName}@${marketplaceName}`;
+}
 function scheduleUninstall({
   pluginRoot = process.env.PLUGIN_ROOT || process.cwd(),
-  pluginId = DEFAULT_PLUGIN_ID,
+  pluginId,
   projectRoot,
   deleteHostConfig = false,
   waitPid = process.pid,
   initialDelayMs = 1500,
   logPath = defaultLogPath
 } = {}) {
-  validatePluginId(pluginId);
   const resolvedPluginRoot = import_node_fs5.default.realpathSync(import_node_path6.default.resolve(pluginRoot));
-  const installedCacheRoot = resolveInstalledCacheRoot(pluginId);
+  const effectivePluginId = pluginId ?? inferPluginIdFromRoot(resolvedPluginRoot) ?? DEFAULT_PLUGIN_ID;
+  validatePluginId(effectivePluginId);
+  const installedCacheRoot = resolveInstalledCacheRoot(effectivePluginId);
   const cacheRoot = import_node_fs5.default.existsSync(installedCacheRoot) ? installedCacheRoot : resolveCacheFamilyRoot(resolvedPluginRoot);
   const temporaryDirectory = import_node_fs5.default.mkdtempSync(
     import_node_path6.default.join(import_node_os4.default.tmpdir(), "codex-ssh-uninstall-")
@@ -58477,7 +58496,7 @@ function scheduleUninstall({
     "--cache-root",
     cacheRoot,
     "--plugin-id",
-    pluginId,
+    effectivePluginId,
     "--wait-pid",
     String(waitPid),
     "--delay-ms",
@@ -58500,7 +58519,7 @@ function scheduleUninstall({
   helper.unref();
   return {
     status: "scheduled",
-    pluginId,
+    pluginId: effectivePluginId,
     cacheRoot,
     helperPath,
     logPath,

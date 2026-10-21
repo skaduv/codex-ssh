@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   removePluginActivationFromToml,
+  inferPluginIdFromRoot,
   resolveCacheFamilyRoot,
   resolveInstalledCacheRoot,
   validatePluginId,
@@ -51,20 +52,28 @@ test("resolves a versioned plugin root to the whole cache family", () => {
 
 test("resolves the installed cache independently of the invoking source path", () => {
   assert.equal(
-    resolveInstalledCacheRoot("codex-ssh@codex-ssh"),
+    resolveInstalledCacheRoot("codex-ssh@skaduv"),
     path.join(
       os.homedir(),
       ".codex",
       "plugins",
       "cache",
-      "codex-ssh",
+      "skaduv",
       "codex-ssh"
     )
   );
 });
 
+test("infers the marketplace name from an installed version directory", () => {
+  assert.equal(
+    inferPluginIdFromRoot("/tmp/.codex/plugins/cache/skaduv/codex-ssh/0.5.0"),
+    "codex-ssh@skaduv"
+  );
+  assert.equal(inferPluginIdFromRoot("/tmp/source/codex-ssh"), undefined);
+});
+
 test("rejects unsafe plugin identifiers", () => {
-  assert.equal(validatePluginId("codex-ssh@codex-ssh"), "codex-ssh@codex-ssh");
+  assert.equal(validatePluginId("codex-ssh@skaduv"), "codex-ssh@skaduv");
   assert.throws(
     () => validatePluginId("codex-ssh; Remove-Item C:\\"),
     /Invalid Codex plugin identifier/

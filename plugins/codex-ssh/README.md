@@ -252,7 +252,7 @@ C:\Users\<用户名>\.codex-ssh\servers.json
 项目 `.codex/config.toml` 已把该插件工具设为 `prompt`：
 
 ```toml
-[plugins."codex-ssh@codex-ssh".mcp_servers.ssh]
+[plugins."codex-ssh@skaduv".mcp_servers.ssh]
 enabled = true
 default_tools_approval_mode = "prompt"
 ```
@@ -279,10 +279,10 @@ codex plugin marketplace list
 正在占用插件状态。可以先重启应用后从 Plugins 页面安装；或者完全退出 Codex 后运行：
 
 ```powershell
-codex plugin add codex-ssh@codex-ssh
+codex plugin add codex-ssh@skaduv
 ```
 
-再重新打开 Codex。公开仓库市场名称为 `codex-ssh`。
+再重新打开 Codex。公开仓库市场名称为 `skaduv`。
 
 ## 8. 卸载插件
 
@@ -296,7 +296,7 @@ codex plugin add codex-ssh@codex-ssh
 
 1. 等待当前 MCP 调用返回。
 2. 只结束加载了 Codex SSH 缓存的 Node/MCP 进程。
-3. 调用官方 `codex plugin remove codex-ssh@codex-ssh` 命令。
+3. 调用官方 `codex plugin remove codex-ssh@skaduv` 命令。
 4. Windows 文件仍被占用时自动重试。
 5. 删除当前项目中仅用于启用 Codex SSH 的 TOML 配置。
 6. 默认保留 `~/.codex-ssh/servers.json` 和主机指纹。
