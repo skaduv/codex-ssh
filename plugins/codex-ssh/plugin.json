@@ -1,0 +1,36 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "codex-ssh",
+  "version": "0.5.0",
+  "description": "Operate configured SSH servers directly from Codex.",
+  "author": {
+    "name": "Tihu"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ssh",
+    "remote-server",
+    "mcp",
+    "codex"
+  ],
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md",
+      "interface": {
+        "displayName": "Codex SSH",
+        "shortDescription": "Import OpenSSH hosts, then operate servers from Codex.",
+        "longDescription": "A local MCP server for Codex that imports concrete hosts from ~/.ssh/config on first run. It can add or remove plugin-managed machine profiles, run commands, manage files, and transfer data. Credentials stay in the local plugin config or key files and are not exposed through tool results.",
+        "developerName": "Tihu",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "defaultPrompt": [
+          "Import my OpenSSH hosts, list them, then inspect the requested server.",
+          "Run a read-only health check on one of my configured SSH servers."
+        ]
+      }
+    }
+  }
+}

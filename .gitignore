@@ -1,0 +1,6 @@
+.codex/
+plugins/codex-ssh/node_modules/
+plugins/codex-ssh/*.known_hosts.json
+plugins/codex-ssh/servers.json
+.DS_Store
+Thumbs.db

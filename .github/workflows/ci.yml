@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: plugins/codex-ssh/package-lock.json
+      - run: npm ci
+        working-directory: plugins/codex-ssh
+      - run: npm run build
+        working-directory: plugins/codex-ssh
+      - run: npm run check
+        working-directory: plugins/codex-ssh

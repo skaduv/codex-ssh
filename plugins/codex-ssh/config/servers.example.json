@@ -1,0 +1,27 @@
+{
+  "hosts": {
+    "example-prod": {
+      "host": "server.example.com",
+      "port": 22,
+      "username": "deploy",
+      "auth": {
+        "type": "privateKey",
+        "privateKeyPath": "~/.ssh/id_ed25519",
+        "passphraseEnv": "CODEX_SSH_EXAMPLE_PROD_PASSPHRASE"
+      },
+      "hostKeyPolicy": "tofu",
+      "defaultCwd": "/srv/app",
+      "allowExec": true,
+      "allowWrite": true,
+      "commandPolicy": {
+        "deniedPatterns": [
+          "(^|\\s)rm\\s+-rf\\s+/(\\s|$)"
+        ]
+      },
+      "connectTimeoutMs": 15000,
+      "commandTimeoutMs": 60000,
+      "maxOutputBytes": 262144,
+      "maxFileBytes": 8388608
+    }
+  }
+}
